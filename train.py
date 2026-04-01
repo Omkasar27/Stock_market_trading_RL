@@ -10,7 +10,7 @@ import torch
 
 from stable_baselines3 import A2C
 from stable_baselines3.common.vec_env import DummyVecEnv
-from env.trading_env import PaperTradingEnv
+from rl_env.trading_env import PaperTradingEnv
 
 # ----------------------------------------------------------
 # 1. CONFIG
