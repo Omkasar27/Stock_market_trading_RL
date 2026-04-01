@@ -268,6 +268,3 @@ This project is developed for **research and educational purposes only**. It is 
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
