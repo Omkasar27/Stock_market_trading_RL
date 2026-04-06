@@ -361,15 +361,14 @@ class PaperTradingEnv(gym.Env):
         self.daily_return_memory.append(float(daily_return))
         sharpe_ratio = self._calculate_sharpe()   # FIX 2 applied inside
 
-        # FIX 1: normalise portfolio change so all three terms are comparable
-        normalised_portfolio_change = change_in_portfolio / self.initial_amount
+        
 
         # PSR = change_in_portfolio + sharpe_ratio + alpha * daily_return
         # (paper eq. 1, with normalised portfolio change)
         reward = (
-            normalised_portfolio_change
-            + sharpe_ratio
-            + self.reward_alpha * daily_return
+        change_in_portfolio 
+        + sharpe_ratio
+        + self.reward_alpha * daily_return
         )
 
         # ── update bookkeeping ────────────────────────────────────────────
