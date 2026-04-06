@@ -7,6 +7,9 @@ import random
 import numpy as np
 import pandas as pd
 import torch
+import joblib
+
+from sklearn.preprocessing import StandardScaler
 
 from stable_baselines3 import A2C
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -30,7 +33,7 @@ torch.manual_seed(SEED)
 INITIAL_AMOUNT = 1_000_000
 HMAX = 100
 REWARD_ALPHA = 0.9
-SHARPE_WINDOW = 30   # improved stability
+SHARPE_WINDOW = 30
 RISK_FREE_RATE = 0.0
 
 TOTAL_TIMESTEPS = 50_000
@@ -40,6 +43,9 @@ TOTAL_TIMESTEPS = 50_000
 # ----------------------------------------------------------
 train_df = pd.read_csv("data/train_data_paper21.csv")
 train_df["date"] = pd.to_datetime(train_df["date"])
+print(train_df.columns.tolist())
+print(train_df[["date", "ticker", "close", "close_raw"]].head(10))
+print(train_df.groupby("date")["ticker"].nunique().value_counts().sort_index())
 
 # ----------------------------------------------------------
 # 3. PAPER FEATURE LIST (DTF)
@@ -63,22 +69,19 @@ if missing_cols:
     raise ValueError(f"Missing columns: {missing_cols}")
 
 # ----------------------------------------------------------
-# 5. ALIGN DATA (CRITICAL)
+# 5. ALIGN DATA
 # ----------------------------------------------------------
-expected_stocks = train_df["ticker"].nunique()
 
-date_counts = train_df.groupby("date")["ticker"].nunique()
-valid_dates = date_counts[date_counts == expected_stocks].index
 
-train_df = train_df[train_df["date"].isin(valid_dates)].copy()
-train_df = train_df.sort_values(["date", "ticker"]).reset_index(drop=True)
-
-print("Expected stocks per date:", expected_stocks)
 print("Remaining train dates:", train_df["date"].nunique())
 print("Train shape:", train_df.shape)
 
 # ----------------------------------------------------------
-# 6. BUILD ENV
+# 6. SCALE FEATURES (IMPORTANT)
+# ----------------------------------------------------------
+
+# ----------------------------------------------------------
+# 7. BUILD ENV
 # ----------------------------------------------------------
 train_env = DummyVecEnv([
     lambda: PaperTradingEnv(
@@ -98,7 +101,7 @@ train_env = DummyVecEnv([
 ])
 
 # ----------------------------------------------------------
-# 7. TRAIN A2C
+# 8. TRAIN A2C
 # ----------------------------------------------------------
 model = A2C(
     policy="MlpPolicy",
@@ -106,7 +109,7 @@ model = A2C(
     verbose=1,
     tensorboard_log=LOG_DIR,
     learning_rate=3e-4,
-    n_steps=10,
+    n_steps=128,
     gamma=0.99,
     gae_lambda=0.95,
     ent_coef=0.01,
@@ -118,7 +121,7 @@ model = A2C(
 model.learn(total_timesteps=TOTAL_TIMESTEPS)
 
 # ----------------------------------------------------------
-# 8. SAVE MODEL
+# 9. SAVE MODEL
 # ----------------------------------------------------------
 model_path = os.path.join(MODEL_DIR, "a2c_trading_model")
 model.save(model_path)
