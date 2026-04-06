@@ -3,21 +3,23 @@
 # ==========================================================
 
 import os
+import joblib
 import numpy as np
 import pandas as pd
 
 from stable_baselines3 import A2C
-from env.trading_env import PaperTradingEnv
+from rl_env.trading_env import PaperTradingEnv   # match training import
 
 # ----------------------------------------------------------
 # 1. CONFIG
 # ----------------------------------------------------------
 MODEL_PATH = "models/a2c_trading_model.zip"
+SCALER_PATH = "models/feature_scaler.pkl"
 
 INITIAL_AMOUNT = 1_000_000
 HMAX = 100
 REWARD_ALPHA = 0.9
-SHARPE_WINDOW = 20
+SHARPE_WINDOW = 30   # match training
 RISK_FREE_RATE = 0.0
 
 # ----------------------------------------------------------
@@ -50,20 +52,21 @@ if missing_cols:
 # ----------------------------------------------------------
 # 5. ALIGN DATA
 # ----------------------------------------------------------
-expected_stocks = test_df["ticker"].nunique()
 
-date_counts = test_df.groupby("date")["ticker"].nunique()
-valid_dates = date_counts[date_counts == expected_stocks].index
 
-test_df = test_df[test_df["date"].isin(valid_dates)].copy()
-test_df = test_df.sort_values(["date", "ticker"]).reset_index(drop=True)
-
-print("Expected stocks per date:", expected_stocks)
 print("Remaining test dates:", test_df["date"].nunique())
 print("Test shape:", test_df.shape)
 
 # ----------------------------------------------------------
-# 6. BUILD ENV
+# 6. APPLY TRAIN SCALER TO TEST FEATURES
+# ----------------------------------------------------------
+if not os.path.exists(SCALER_PATH):
+    raise FileNotFoundError(f"Scaler not found: {SCALER_PATH}")
+
+
+
+# ----------------------------------------------------------
+# 7. BUILD ENV
 # ----------------------------------------------------------
 test_env = PaperTradingEnv(
     df=test_df,
@@ -81,7 +84,7 @@ test_env = PaperTradingEnv(
 )
 
 # ----------------------------------------------------------
-# 7. LOAD MODEL
+# 8. LOAD MODEL
 # ----------------------------------------------------------
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"Model not found: {MODEL_PATH}")
@@ -90,38 +93,25 @@ model = A2C.load(MODEL_PATH)
 print("✅ Model loaded")
 
 # ----------------------------------------------------------
-# 8. RESET ENV (FIXED)
+# 9. RESET ENV
 # ----------------------------------------------------------
-obs = test_env.reset()
-
-if isinstance(obs, tuple):
-    obs = obs[0]
-
+obs, _ = test_env.reset()
 done = False
 
 # ----------------------------------------------------------
-# 9. BACKTEST LOOP (FIXED)
+# 10. BACKTEST LOOP
 # ----------------------------------------------------------
 while not done:
     action, _ = model.predict(obs, deterministic=True)
-
     action = np.array(action).flatten()
 
-    result = test_env.step(action)
-
-    if len(result) == 4:
-        obs, reward, done, info = result
-    else:
-        obs, reward, terminated, truncated, info = result
-        done = terminated or truncated
-
-    if isinstance(obs, tuple):
-        obs = obs[0]
+    obs, reward, terminated, truncated, info = test_env.step(action)
+    done = terminated or truncated
 
 print("✅ Backtesting complete")
 
 # ----------------------------------------------------------
-# 10. SAVE RESULTS
+# 11. SAVE RESULTS
 # ----------------------------------------------------------
 portfolio_df = test_env.save_asset_memory()
 reward_df = test_env.save_reward_memory()
@@ -134,18 +124,18 @@ action_df.to_csv("a2c_test_actions.csv", index=False)
 print("✅ Results saved")
 
 # ----------------------------------------------------------
-# 11. EVALUATION
+# 12. EVALUATION
 # ----------------------------------------------------------
 initial = portfolio_df["portfolio_value"].iloc[0]
 final = portfolio_df["portfolio_value"].iloc[-1]
 
-returns = portfolio_df["portfolio_value"].pct_change().dropna()
-
 cumulative_return = (final - initial) / initial
-sharpe_ratio = returns.mean() / (returns.std() + 1e-8)
+sharpe_ratio = test_env.get_sharpe_ratio()
+max_drawdown = test_env.get_max_drawdown()
 
 print("\n📊 PERFORMANCE")
 print("Initial Value:", initial)
 print("Final Value:", final)
 print("Cumulative Return:", cumulative_return)
 print("Sharpe Ratio:", sharpe_ratio)
+print("Max Drawdown:", max_drawdown)
