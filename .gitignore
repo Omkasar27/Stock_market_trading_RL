@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+env/
+.vscode/
+.idea/
+logs/
+tensorboard/
+models/*.zip
+
+data/*.csv
+*.csv
