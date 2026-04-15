@@ -69,16 +69,16 @@ Backtesting period: **2021-10-01 → 2023-03-01** | Initial Portfolio: **$1,000,
 ### Performance Charts
 
 **A2C vs Baseline (^DJI)**
-![A2C vs Baseline](results/plots/a2c_vs_baseline.png)
+![A2C vs Baseline](results/plots/1_a2c_vs_baseline.png)
 
 **DDPG vs Baseline (^DJI)**
-![DDPG vs Baseline](results/plots/ddpg_vs_baseline.png)
+![DDPG vs Baseline](results/plots/2_ddpg_vs_baseline.png)
 
 **A2C vs DDPG**
-![A2C vs DDPG](results/plots/a2c_vs_ddpg.png)
+![A2C vs DDPG](results/plots/3_a2c_vs_ddpg.png)
 
 **Full Dashboard**
-![Performance Dashboard](results/plots/all_combined_dashboard.png)
+![Performance Dashboard](results/plots/4_all_combined_dashboard.png)
 
 ---
 
