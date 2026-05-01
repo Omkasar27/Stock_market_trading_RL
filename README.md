@@ -55,7 +55,7 @@ Backtesting period: **2021-10-01 → 2023-03-01** | Initial Portfolio: **$1,000,
 
 | Metric | A2C | DDPG | ^DJI Baseline |
 |---|---|---|---|
-| Final Portfolio Value | $995,772 | **$1,042,937** | $973,588 |
+| Final Portfolio Value | 995,772 | **1,042,937** | 973,588 |
 | Total Return | -0.42% | **+4.29%** | -2.64% |
 | Annual Return | 1.20% | **4.34%** | -0.70% |
 | Annual Volatility | 17.32% | **16.36%** | 16.86% |
